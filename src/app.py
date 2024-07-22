@@ -29,13 +29,75 @@ def sitemap():
 def handle_hello():
 
     # this is how you can use the Family datastructure by calling its methods
-    members = jackson_family.get_all_members()
+    all_members = jackson_family.get_all_members()
+
+    return jsonify(all_members), 200
+
+@app.route('/member', methods = ['POST'])
+def create_member():
+    member_to_add = request.get_json()
+
+    if ("first_name" not in member_to_add
+        or "age" not in member_to_add 
+        or "lucky_numbers" not in member_to_add):
+        
+        response_body = {
+            "ok": False,
+            "msg": "These fields are required: first_name, age and lucky_numbers"
+        }
+        
+        return jsonify(response_body), 400
+
+    new_member = jackson_family.add_member(member_to_add)
+
+    return jsonify(new_member), 200
+
+@app.route('/member/<int:member_id>', methods = ['GET'])
+def get_member(member_id):
+    member_exist = jackson_family.get_member(member_id)
+    
+    if (not member_exist):
+        response_body = {
+            "ok": False,
+            "msg": "This member id doesn't exist in the family"
+        }
+        return jsonify(response_body), 400
+        
+    return jsonify(member_exist), 200
+
+@app.route('/member/<int:member_id>', methods = ['PUT'])
+def update_member(member_id):
+    date_to_update = request.get_json()
+    updated_member = jackson_family.update_member(member_id, date_to_update)
+    if (not updated_member):
+        response_body = {
+            "ok": True,
+            "msg": "This member id doesn't exist in the family or the data to update is incorrect"
+        }
+        return jsonify(response_body), 404
+    
     response_body = {
-        "hello": "world",
-        "family": members
+        "ok": True,
+        "member": updated_member
     }
+    
+    return jsonify(response_body), 200
 
-
+@app.route('/member/<int:member_id>', methods = ['DELETE'])
+def delete_member(member_id):
+    member_to_delete = jackson_family.delete_member(member_id)
+    if (not member_to_delete):
+        response_body = {
+            "ok": False,
+            "msg": "This member id doesn't exist in the family"
+        }
+        return jsonify(response_body), 404
+    
+    response_body = {
+        "done": True,
+        "msg": f"Member with id #{member_id} deleted"
+    }
+    
     return jsonify(response_body), 200
 
 # this only runs if `$ python src/app.py` is executed
